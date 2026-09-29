@@ -6,13 +6,49 @@ body {
   background: var(--custom-bg) !important;
 }
 
-html:not([privatebrowsingmode="temporary"]) #navigator-toolbox {
-  padding-top: 3px;
-  padding-bottom: 4px;
-  background: var(--custom-bg) !important;
-  border-bottom: 0 !important;
+/* ============================================
+   TOP BAR — hidden by default, Cmd+L to reveal
+
+   Strategy: use negative margin-top to slide the
+   toolbox out of view. The toolbox keeps its full
+   internal layout so Firefox always knows where
+   the urlbar is when positioning the results popup.
+   ============================================ */
+
+:root {
+  /* Height to slide the toolbox up by. Tweak if needed. */
+  --uc-toolbox-height: 40px;
 }
 
+#navigator-toolbox {
+  background: var(--custom-bg) !important;
+  border-bottom: 0 !important;
+  /* Transition only applies to COLLAPSE (focused -> unfocused) */
+  transition: none !important;
+}
+
+/* Slide the toolbox upward out of view when unfocused */
+#navigator-toolbox:not(:focus-within) {
+  margin-top: calc(-1 * var(--uc-toolbox-height)) !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: margin-top 0.1s ease-in-out,
+              opacity 0.05s ease-in-out !important;
+}
+
+/* When focused, snap back into place (no transition) */
+#navigator-toolbox:focus-within {
+  margin-top: 0 !important;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#titlebar,
+#nav-bar {
+  overflow: hidden;
+}
+
+/* Nav bar styling */
 #nav-bar {
   background: var(--custom-bg) !important;
   display: flex;
@@ -21,7 +57,6 @@ html:not([privatebrowsingmode="temporary"]) #navigator-toolbox {
   width: calc(100% - 20px);
 }
 
-/* Ensure icons are centered within the nav-bar */
 #nav-bar > .nav-bar-inner {
   display: flex;
   justify-content: center;
@@ -29,15 +64,33 @@ html:not([privatebrowsingmode="temporary"]) #navigator-toolbox {
   width: 100%;
 }
 
-html:not([privatebrowsingmode="temporary"]) #sidebar-box {
-  background: var(--custom-bg) !important;
+#identity-icon-label {
+  display: none;
 }
 
-html:not([privatebrowsingmode="temporary"]) #sidebar-splitter {
-  border: none !important;
-  background: transparent !important;
-  width: 1px !important;
+/* Center the urlbar via its container instead of
+   transforming #urlbar itself. Firefox positions the
+   results dropdown from the urlbar's untransformed
+   layout box, so a transform shifts the dropdown. */
+#urlbar-container {
+  margin-inline: auto !important;
+  max-width: 960px !important;
+  width: 100% !important;
 }
+
+#urlbar {
+  left: unset !important;
+  transform: none !important;
+}
+
+#urlbar:not([breakout-extend]) #urlbar-background {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+/* ============================================
+   TAB BAR — always hidden (Sidebery replaces)
+   ============================================ */
 
 html:not([privatebrowsingmode="temporary"]) #TabsToolbar {
   visibility: collapse !important;
@@ -46,6 +99,10 @@ html:not([privatebrowsingmode="temporary"]) #TabsToolbar {
 #TabsToolbar {
   background: var(--custom-bg) !important;
 }
+
+/* ============================================
+   TITLE BAR BUTTONS
+   ============================================ */
 
 html:not([privatebrowsingmode="temporary"]) .titlebar-buttonbox-container {
   position: absolute;
@@ -60,60 +117,79 @@ html:not([privatebrowsingmode="temporary"]) .titlebar-buttonbox-container {
   width: 36px !important;
 }
 
-html:not([privatebrowsingmode="temporary"]) #sidebar-header {
-  display: none;
+/* ============================================
+   SIDEBAR — auto-hide with smooth animation
+
+   The transition is on #sidebar-box (min-width,
+   width, max-width) so the whole thing animates
+   together. #sidebar grows with it on hover.
+   ============================================ */
+
+/* Hide the new sidebar launcher strip (sidebar.revamp) */
+#sidebar-main,
+#sidebar-launcher-splitter {
+  display: none !important;
 }
 
-#identity-icon-label {
-  display: none;
-}
-
-#urlbar {
-  left: 50% !important;
-  transform: translateX(-50%);
-  max-width: 960px !important;
-}
-
-#urlbar:not([breakout-extend]) #urlbar-background {
-  background: none !important;
-  background-color: transparent !important;
+/* Hide sidebar headers (old and revamped sidebar) */
+html:not([privatebrowsingmode="temporary"]) #sidebar-header,
+html:not([privatebrowsingmode="temporary"]) #sidebar-panel-header {
+  display: none !important;
 }
 
 html:not([privatebrowsingmode="temporary"]) #sidebar-box {
   --uc-sidebar-width: 60px;
   --uc-sidebar-hover-width: 360px;
-  position: relative;
+  position: relative !important;
+  /* Stop the new flex layout from overriding our width */
+  flex: none !important;
   min-width: var(--uc-sidebar-width) !important;
   width: var(--uc-sidebar-width) !important;
   max-width: var(--uc-sidebar-width) !important;
   z-index: 4 !important;
-  transition: width 0.1s ease-in-out, min-width 0.1s ease-in-out, max-width 0.1s ease-in-out;
+  overflow: hidden !important;
+  /* Delayed close */
+  transition: min-width 0.15s ease-in-out 0.1s,
+              width 0.15s ease-in-out 0.1s,
+              max-width 0.15s ease-in-out 0.1s,
+              margin-right 0.15s ease-in-out 0.1s !important;
 }
 
-/* Fix for sidebar hover expansion */
-html:not([privatebrowsingmode="temporary"]) #sidebar-box:hover {
+html:not([privatebrowsingmode="temporary"]) #sidebar-box:is(:hover, :focus-within) {
   min-width: var(--uc-sidebar-hover-width) !important;
   width: var(--uc-sidebar-hover-width) !important;
   max-width: var(--uc-sidebar-hover-width) !important;
-}
-
-html:not([privatebrowsingmode="temporary"]) #main-window[sizemode="fullscreen"] #sidebar-box {
-  --uc-sidebar-width: 1px;
-}
-
-html:not([privatebrowsingmode="temporary"]) #sidebar-splitter {
-  display: none;
+  /* Overlay page content instead of pushing it */
+  margin-right: calc((var(--uc-sidebar-hover-width) - var(--uc-sidebar-width)) * -1) !important;
+  /* Instant open */
+  transition-delay: 0s !important;
 }
 
 html:not([privatebrowsingmode="temporary"]) #sidebar {
   min-width: var(--uc-sidebar-width) !important;
+  will-change: min-width;
 }
 
-html:not([privatebrowsingmode="temporary"]) #sidebar-box:hover > #sidebar {
+/* Descendant selector, not ">", since #sidebar may no
+   longer be a direct child of #sidebar-box */
+html:not([privatebrowsingmode="temporary"]) #sidebar-box:is(:hover, :focus-within) #sidebar {
   min-width: var(--uc-sidebar-hover-width) !important;
+  width: var(--uc-sidebar-hover-width) !important;
+}
+
+html:not([privatebrowsingmode="temporary"]) #sidebar-splitter {
+  display: none !important;
 }
 
 html:not([privatebrowsingmode="temporary"]) .sidebar-panel {
   background-color: transparent !important;
   color: var(--newtab-text-primary-color) !important;
+}
+
+/* ============================================
+   FULLSCREEN
+   ============================================ */
+
+html:not([privatebrowsingmode="temporary"]) #main-window[sizemode="fullscreen"] #sidebar-box {
+  --uc-sidebar-width: 1px;
 }
