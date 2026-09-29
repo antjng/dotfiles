@@ -125,9 +125,13 @@ html:not([privatebrowsingmode="temporary"]) .titlebar-buttonbox-container {
    together. #sidebar grows with it on hover.
    ============================================ */
 
-/* Hide the new sidebar launcher strip (sidebar.revamp) */
-#sidebar-main,
-#sidebar-launcher-splitter {
+/* Hide sidebar header: title, switcher dropdown, close button */
+#sidebar-header,
+#sidebar-panel-header,
+sidebar-panel-header,
+.sidebar-panel-header,
+#sidebar-switcher-target,
+#sidebar-close {
   display: none !important;
 }
 
